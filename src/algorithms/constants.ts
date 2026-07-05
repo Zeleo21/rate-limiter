@@ -12,6 +12,7 @@ export enum RateLimitingAlias {
     SLIDING_WINDOW = "sw",
 }
 
+export type RateLimitingAlgorithmType = RateLimitingAlgorithm | RateLimitingAlias;
 
 export const rateLimitingAlgorithms = Object.values(RateLimitingAlgorithm);
 export const rateLimitingAlgorithmsAliases = Object.values(RateLimitingAlias);
