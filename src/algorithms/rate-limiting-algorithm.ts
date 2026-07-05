@@ -3,7 +3,9 @@ import {FixedWindow} from "./fixed-window.ts";
 
 
 export interface IRateLimitingAlgorithm {
-    allowRequest(): boolean
+    allowRequest(timeStamp?: number): boolean
+    getRemainingRequests(timestamp?: number): number
+    getResetAt(timestamp?: number): number
     simulateAlgorithm(sleepTime: number): Promise<void>
 }
 

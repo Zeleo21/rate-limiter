@@ -6,13 +6,13 @@ export class FixedWindow implements IRateLimitingAlgorithm {
     private readonly windowSize: number;
     private readonly maxRequestsPerWindow: number;
     private currentRequests: number;
-    private windowStart: Date
+    private windowStart: number;
 
-    constructor(windowSize: number = (5 * 1000), maxRequestsPerWindow: number = 100) {
+    constructor(windowSize: number = (60 * 1000), maxRequestsPerWindow: number = 100) {
         this.windowSize = windowSize;
         this.maxRequestsPerWindow = maxRequestsPerWindow;
         this.currentRequests = 0;
-        this.windowStart = new Date();
+        this.windowStart = Date.now();
     }
 
     private resetRequestCounter(): void {
@@ -20,17 +20,22 @@ export class FixedWindow implements IRateLimitingAlgorithm {
     }
 
     private resetWindowStart(): void {
-        this.windowStart = new Date();
+        this.windowStart = Date.now()
     }
 
-    public allowRequest(): boolean {
-        const now = new Date(Date.now());
-        // We have passed onto a new window
-        if (now.getTime() - this.windowStart.getTime() >= this.windowSize) {
+    public getResetAt(timestamp: number = Date.now()): number {
+        if (timestamp - this.windowStart >= this.windowSize) {
+            return timestamp + this.windowSize;
+        }
+        return this.windowStart + this.windowSize;
+    }
+
+    public allowRequest(timestamp: number = Date.now()): boolean {
+        if (timestamp - this.windowStart >= this.windowSize) {
             this.resetRequestCounter();
             this.resetWindowStart();
         }
-        if (this.getNumberOfAvailableRequestsInTimeWindow() > 0) {
+        if (this.getRemainingRequests(timestamp) > 0) {
             this.currentRequests++;
             return true;
         } else {
@@ -38,18 +43,20 @@ export class FixedWindow implements IRateLimitingAlgorithm {
         }
     }
 
-    public getNumberOfAvailableRequestsInTimeWindow(): number {
+    public getRemainingRequests(timeStamp: number = Date.now()): number {
+        if (timeStamp - this.windowStart >= this.windowSize) {
+            return this.maxRequestsPerWindow;
+        }
         return this.maxRequestsPerWindow - this.currentRequests;
     }
 
     public async simulateAlgorithm(sleepTime: number): Promise<void> {
         while (true) {
-            const now = new Date(Date.now());
+            const now = Date.now();
             const defaultInformation = {
-                currentTimeStamp: now.getTime(),
-                currentDate: now,
+                currentTimeStamp: now,
                 currentRequests: this.currentRequests,
-                timeUntilNextWindow: this.windowStart.getTime() + this.windowSize - now.getTime(),
+                timeUntilNextWindow: this.windowStart + this.windowSize - now,
                 maxRequestsPerWindow: this.maxRequestsPerWindow,
             };
             if (this.allowRequest()) {
